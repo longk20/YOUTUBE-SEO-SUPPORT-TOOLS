@@ -327,13 +327,32 @@
                 sortedTags.forEach((item, index) => {
                     const count = item[1];
                     const percentage = ((count / videosWithTags) * 100).toFixed(1);
+                    // FIX: AN TOÀN - dùng textContent thay vì innerHTML để tránh XSS
+                    // (tag video do người khác tự đặt, không đáng tin cậy)
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td style="text-align:center;">${index + 1}</td>
-                        <td style="font-weight:bold;">${item[0]}</td>
-                        <td style="text-align:center;">${count}</td>
-                        <td style="text-align:center; font-weight:bold; color: #d32f2f;">${percentage}%</td>
-                    `;
+
+                    const tdIndex = document.createElement('td');
+                    tdIndex.style.textAlign = 'center';
+                    tdIndex.textContent = index + 1;
+
+                    const tdTag = document.createElement('td');
+                    tdTag.style.fontWeight = 'bold';
+                    tdTag.textContent = item[0];
+
+                    const tdCount = document.createElement('td');
+                    tdCount.style.textAlign = 'center';
+                    tdCount.textContent = count;
+
+                    const tdPct = document.createElement('td');
+                    tdPct.style.textAlign = 'center';
+                    tdPct.style.fontWeight = 'bold';
+                    tdPct.style.color = '#d32f2f';
+                    tdPct.textContent = percentage + '%';
+
+                    tr.appendChild(tdIndex);
+                    tr.appendChild(tdTag);
+                    tr.appendChild(tdCount);
+                    tr.appendChild(tdPct);
                     tableBody.appendChild(tr);
                 });
                 statusDiv.style.color = 'green';
