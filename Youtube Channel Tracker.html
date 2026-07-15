@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Channel Tracker Pro (Max Stability)</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { background-color: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 1200px; }
+        h1 { text-align: center; color: #ff9800; margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; }
+        input[type="password"], textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 15px; font-family: inherit;}
+        button { width: 100%; padding: 12px; background-color: #ff9800; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        button:hover { background-color: #e68a00; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        #status { margin-top: 15px; font-weight: bold; text-align: center; color: #0066cc; }
+        
+        .table-wrapper { overflow-x: auto; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; min-width: 1000px;}
+        th, td { border: 1px solid #ddd; padding: 12px 10px; text-align: center; vertical-align: middle; }
+        th { background-color: #fff3e0; color: #333; font-weight: bold; }
+        td:nth-child(1), td:nth-child(2) { text-align: left; }
+        a { color: #1a73e8; text-decoration: none; font-weight: 500;}
+        a:hover { text-decoration: underline; }
+        tr:nth-child(even) { background-color: #fafafa; }
+        .highlight { color: #d32f2f; font-weight: bold; }
+        .success { color: #388e3c; font-weight: bold; }
+        .error-row { background-color: #ffebee !important; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📊 YouTube Channel Tracker Pro</h1>
+    
+    <div class="form-group">
+        <label>🔑 Nhập YouTube API Key:</label>
+        <input type="password" id="apiKey" placeholder="AIzaSy...">
+    </div>
+
+    <div class="form-group">
+        <label>🔗 Nhập danh sách Kênh (Mỗi kênh 1 dòng):</label>
+        <textarea id="channelLinks" rows="8" placeholder="@lunaromance1&#10;@melodianostalgica"></textarea>
+    </div>
+
+    <button id="btnSearch" onclick="trackChannels()">🔍 Trích xuất Dữ liệu & Phân tích 30 ngày qua</button>
+
+    <div id="status"></div>
+    
+    <div class="table-wrapper">
+        <table id="resultTable" style="display: none;">
+            <thead>
+                <tr>
+                    <th>KÊNH</th>
+                    <th>Link</th>
+                    <th>Thị trường</th>
+                    <th>SUB</th>
+                    <th>Tổng traffic (View)</th>
+                    <th style="background-color: #e8f5e9;">Thời lượng trung bình<br><small>(Video mới 1 tháng qua)</small></th>
+                    <th style="background-color: #e8f5e9;">Tần suất đăng<br><small>(Video / Tuần)</small></th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Fomat số có dấu phẩy
+    function formatNumber(num) {
+        if(isNaN(num)) return "0";
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    // Tự động nhận diện @handle hoặc UC_ID
+    function extractChannelInfo(input) {
+        input = input.trim();
+        let handleMatch = input.match(/@([a-zA-Z0-9_.-]+)/);
+        if (handleMatch) return { type: 'handle', value: handleMatch[1] };
+        
+        let idMatch = input.match(/(?:channel\/|^)(UC[\w-]{22})/);
+        if (idMatch) return { type: 'id', value: idMatch[1] };
+        
+        return { type: 'search', value: input }; // Dự phòng tìm kiếm bằng chữ
+    }
+
+    function parseISO8601Duration(duration) {
+        if(!duration) return 0;
+        const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+        if (!match) return 0;
+        const hours = (parseInt(match[1]) || 0);
+        const minutes = (parseInt(match[2]) || 0);
+        const seconds = (parseInt(match[3]) || 0);
+        return (hours * 3600) + (minutes * 60) + seconds;
+    }
+
+    function formatSeconds(totalSeconds) {
+        if (isNaN(totalSeconds) || totalSeconds <= 0) return "00:00";
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = Math.floor(totalSeconds % 60);
+        let result = "";
+        if (h > 0) result += `${h} giờ `;
+        if (m > 0) result += `${m} phút `;
+        if (s > 0 && h === 0) result += `${s} giây`; 
+        return result.trim() || "0 giây";
+    }
+
+    async function trackChannels() {
+        const apiKey = document.getElementById('apiKey').value.trim();
+        const rawInput = document.getElementById('channelLinks').value.trim();
+        const statusDiv = document.getElementById('status');
+        const resultTable = document.getElementById('resultTable');
+        const tableBody = document.getElementById('tableBody');
+        const btn = document.getElementById('btnSearch');
+
+        if (!apiKey || !rawInput) {
+            alert("Vui lòng nhập API Key và danh sách Kênh!");
+            return;
+        }
+
+        const lines = rawInput.split('\n').filter(line => line.trim() !== '');
+        
+        btn.disabled = true;
+        resultTable.style.display = 'none';
+        tableBody.innerHTML = '';
+        statusDiv.style.color = '#0066cc';
+        statusDiv.innerText = `⏳ Đang xử lý ${lines.length} kênh...`;
+
+        let successCount = 0;
+        let failCount = 0;
+        
+        // Mốc thời gian 30 ngày trước
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        for (let i = 0; i < lines.length; i++) {
+            try {
+                const info = extractChannelInfo(lines[i]);
+                let channelData = null;
+
+                // BƯỚC 1: TÌM ID KÊNH
+                if (info.type === 'handle' || info.type === 'id') {
+                    let apiUrl = info.type === 'handle' 
+                        ? `https://youtube.googleapis.com/youtube/v3/channels?part=snippet,statistics,contentDetails&forHandle=@${info.value}&key=${apiKey}`
+                        : `https://youtube.googleapis.com/youtube/v3/channels?part=snippet,statistics,contentDetails&id=${info.value}&key=${apiKey}`;
+                    
+                    const res = await fetch(apiUrl);
+                    const data = await res.json();
+                    if (!data.error && data.items && data.items.length > 0) {
+                        channelData = data.items[0];
+                    }
+                } 
+                
+                // Thuật toán dự phòng (Fallback): Nếu không tìm thấy bằng handle, dùng lệnh search
+                if (!channelData) {
+                    const searchRes = await fetch(`https://youtube.googleapis.com/youtube/v3/search?part=id&type=channel&q=${encodeURIComponent(lines[i])}&maxResults=1&key=${apiKey}`);
+                    const searchData = await searchRes.json();
+                    if (searchData.items && searchData.items.length > 0) {
+                        const foundId = searchData.items[0].id.channelId;
+                        const channelRes = await fetch(`https://youtube.googleapis.com/youtube/v3/channels?part=snippet,statistics,contentDetails&id=${foundId}&key=${apiKey}`);
+                        const cData = await channelRes.json();
+                        if (cData.items && cData.items.length > 0) channelData = cData.items[0];
+                    }
+                }
+
+                if (!channelData) throw new Error("Kênh không tồn tại hoặc sai định dạng");
+
+                // BƯỚC 2: RÚT TRÍCH THÔNG TIN CHUNG
+                const title = channelData.snippet?.title || lines[i];
+                const customUrl = channelData.snippet?.customUrl || '';
+                const url = customUrl ? `https://www.youtube.com/${customUrl}` : `https://www.youtube.com/channel/${channelData.id}`;
+                const country = channelData.snippet?.country || '-';
+                const subs = parseInt(channelData.statistics?.subscriberCount || 0);
+                const views = parseInt(channelData.statistics?.viewCount || 0);
+                
+                const uploadsPlaylistId = channelData.contentDetails?.relatedPlaylists?.uploads || null;
+
+                let avgDurationText = "<span style='color:#9e9e9e'>Không có video mới</span>";
+                let freqText = "<span style='color:#9e9e9e'>0</span>";
+
+                // BƯỚC 3: TÍNH TẦN SUẤT VÀ THỜI LƯỢNG (An toàn tuyệt đối)
+                if (uploadsPlaylistId) {
+                    let recentVideoIds = [];
+                    const playlistRes = await fetch(`https://youtube.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${uploadsPlaylistId}&maxResults=50&key=${apiKey}`);
+                    const playlistData = await playlistRes.json();
+
+                    if(playlistData.items) {
+                        playlistData.items.forEach(item => {
+                            const pubDate = new Date(item.snippet?.publishedAt);
+                            if(pubDate >= thirtyDaysAgo && item.snippet?.resourceId?.videoId) {
+                                recentVideoIds.push(item.snippet.resourceId.videoId);
+                            }
+                        });
+                    }
+
+                    // Nếu có video mới trong 30 ngày -> Tiến hành chia
+                    if(recentVideoIds.length > 0) {
+                        const freq = recentVideoIds.length / (30 / 7);
+                        freqText = freq.toFixed(1);
+
+                        const vidRes = await fetch(`https://youtube.googleapis.com/youtube/v3/videos?part=contentDetails&id=${recentVideoIds.join(',')}&key=${apiKey}`);
+                        const vidData = await vidRes.json();
+                        
+                        if(vidData.items) {
+                            let totalSeconds = 0;
+                            vidData.items.forEach(vid => {
+                                totalSeconds += parseISO8601Duration(vid.contentDetails?.duration);
+                            });
+                            const avgSeconds = totalSeconds / vidData.items.length;
+                            avgDurationText = formatSeconds(avgSeconds);
+                        }
+                    }
+                }
+
+                // BƯỚC 4: IN DÒNG THÀNH CÔNG VÀO BẢNG
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight:bold;">${title}</td>
+                    <td><a href="${url}" target="_blank">${customUrl || channelData.id}</a></td>
+                    <td>${country}</td>
+                    <td class="highlight">${formatNumber(subs)}</td>
+                    <td class="success">${formatNumber(views)}</td>
+                    <td style="background-color: #f1f8e9;">${avgDurationText}</td>
+                    <td style="background-color: #f1f8e9;">${freqText}</td>
+                `;
+                tableBody.appendChild(tr);
+                successCount++;
+
+            } catch (err) {
+                const tr = document.createElement('tr');
+                tr.className = "error-row";
+                tr.innerHTML = `
+                    <td style="font-weight:bold;">${lines[i]}</td>
+                    <td colspan="6" style="color: red; text-align: left;">⚠️ Bỏ qua do lỗi: ${err.message}</td>
+                `;
+                tableBody.appendChild(tr);
+                failCount++;
+            }
+        }
+
+        statusDiv.style.color = failCount === 0 ? 'green' : '#e65100';
+        statusDiv.innerText = `✅ Hoàn thành! Quét thành công ${successCount} kênh. (Thất bại: ${failCount} kênh).`;
+        resultTable.style.display = 'table';
+        btn.disabled = false;
+    }
+</script>
+
+</body>
+</html>
