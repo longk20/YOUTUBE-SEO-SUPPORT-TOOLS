@@ -251,19 +251,14 @@
 </head>
 <body>
     <div class="language-switch">
-        <button class="lang-btn active" onclick="switchLanguage('en')">English</button>
-        <button class="lang-btn" onclick="switchLanguage('vi')">Tiếng Việt</button>
+        <button class="lang-btn active" onclick="switchLanguage(event, 'en')">English</button>
+        <button class="lang-btn" onclick="switchLanguage(event, 'vi')">Tiếng Việt</button>
     </div>
     
     <div class="container">
-        <header id="header-en">
-            <h1>🎥 YouTube SEO Support Tools</h1>
-            <p>Professional Tools for YouTube Data Analysis & SEO Optimization</p>
-        </header>
-        
-        <header id="header-vi" class="hidden">
-            <h1>🎥 Công Cụ YouTube SEO</h1>
-            <p>Công cụ chuyên nghiệp để phân tích dữ liệu YouTube và tối ưu hóa SEO</p>
+        <header>
+            <h1 id="header-title">🎥 YouTube SEO Support Tools</h1>
+            <p id="header-subtitle">Professional Tools for YouTube Data Analysis & SEO Optimization</p>
         </header>
         
         <div class="tools-grid">
@@ -272,10 +267,10 @@
                 <h3 id="tool1-title">📝 YouTube Comment Extractor</h3>
                 <p id="tool1-desc">Extract comments from one or multiple YouTube channels easily</p>
                 <ul id="tool1-features">
-                    <li>Extract comments from channels</li>
-                    <li>Get channel names & video URLs</li>
-                    <li>Export to Excel format</li>
-                    <li>AI analysis ready</li>
+                    <li id="tool1-feature1">Extract comments from channels</li>
+                    <li id="tool1-feature2">Get channel names & video URLs</li>
+                    <li id="tool1-feature3">Export to Excel format</li>
+                    <li id="tool1-feature4">AI analysis ready</li>
                 </ul>
                 <button class="btn" onclick="openTool('Tools%20collect%20comments.html')" id="tool1-btn">Open Tool</button>
             </div>
@@ -285,10 +280,10 @@
                 <h3 id="tool2-title">🏷️ YouTube Tag Extractor</h3>
                 <p id="tool2-desc">Extract and analyze tags from YouTube videos</p>
                 <ul id="tool2-features">
-                    <li>Extract tags from videos</li>
-                    <li>Analyze channel tag trends</li>
-                    <li>SEO-friendly keywords</li>
-                    <li>Keyword research support</li>
+                    <li id="tool2-feature1">Extract tags from videos</li>
+                    <li id="tool2-feature2">Analyze channel tag trends</li>
+                    <li id="tool2-feature3">SEO-friendly keywords</li>
+                    <li id="tool2-feature4">Keyword research support</li>
                 </ul>
                 <button class="btn" onclick="openTool('Youtube%20Tag%20Tracker.html')" id="tool2-btn">Open Tool</button>
             </div>
@@ -298,10 +293,10 @@
                 <h3 id="tool3-title">🔍 YouTube Keyword Research</h3>
                 <p id="tool3-desc">Research keywords for SEO and content planning</p>
                 <ul id="tool3-features">
-                    <li>YouTube keyword research</li>
-                    <li>SEO optimization tips</li>
-                    <li>Content planning support</li>
-                    <li>Trend analysis</li>
+                    <li id="tool3-feature1">YouTube keyword research</li>
+                    <li id="tool3-feature2">SEO optimization tips</li>
+                    <li id="tool3-feature3">Content planning support</li>
+                    <li id="tool3-feature4">Trend analysis</li>
                 </ul>
                 <button class="btn" onclick="openTool('Keyword%20Research.html')" id="tool3-btn">Open Tool</button>
             </div>
@@ -426,19 +421,20 @@
             }
         };
         
-        function switchLanguage(lang) {
+        function switchLanguage(event, lang) {
             // Update language buttons
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             event.target.classList.add('active');
             
-            // Hide all headers
-            document.getElementById('header-en').classList.add('hidden');
-            document.getElementById('header-vi').classList.add('hidden');
-            
-            // Show current language header
-            document.getElementById('header-' + lang).classList.remove('hidden');
+            // Update all text elements
+            for (const [key, value] of Object.entries(translations[lang])) {
+                const element = document.getElementById(key);
+                if (element) {
+                    element.textContent = value;
+                }
+            }
             
             // Save to localStorage
             localStorage.setItem('language', lang);
@@ -452,17 +448,9 @@
         window.addEventListener('load', function() {
             const savedLang = localStorage.getItem('language') || 'en';
             const buttons = document.querySelectorAll('.lang-btn');
-            buttons.forEach((btn, index) => {
-                if ((index === 0 && savedLang === 'en') || (index === 1 && savedLang === 'vi')) {
-                    btn.classList.add('active');
-                } else {
-                    btn.classList.remove('active');
-                }
-            });
             
-            if (savedLang !== 'en') {
-                document.getElementById('header-en').classList.add('hidden');
-                document.getElementById('header-vi').classList.remove('hidden');
+            if (savedLang === 'vi') {
+                buttons[1].click();
             }
         });
     </script>
