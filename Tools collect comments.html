@@ -329,17 +329,35 @@
 
             log(t.logSuccess.replace("{num}", commentsData.length));
 
-            // ĐỔ DỮ LIỆU VÀO BẢNG
+            // ĐỔ DỮ LIỆU VÀO BẢNG - FIX: Dùng textContent thay vì innerHTML để tránh XSS
             let totalChars = 0;
             commentsData.forEach((item, index) => {
                 totalChars += item.content.length;
+                // AN TOÀN: dùng textContent thay vì innerHTML để tránh XSS từ
+                // bình luận YouTube (nội dung do người lạ viết, không đáng tin cậy)
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td>${item.channel}</td>
-                    <td><a href="${item.videoUrl}" target="_blank">${item.videoUrl}</a></td>
-                    <td>${item.content}</td>
-                `;
+
+                const tdIndex = document.createElement('td');
+                tdIndex.textContent = index + 1;
+
+                const tdChannel = document.createElement('td');
+                tdChannel.textContent = item.channel;
+
+                const tdVideo = document.createElement('td');
+                const link = document.createElement('a');
+                link.href = item.videoUrl;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
+                link.textContent = item.videoUrl;
+                tdVideo.appendChild(link);
+
+                const tdContent = document.createElement('td');
+                tdContent.textContent = item.content;
+
+                tr.appendChild(tdIndex);
+                tr.appendChild(tdChannel);
+                tr.appendChild(tdVideo);
+                tr.appendChild(tdContent);
                 $('tableBody').appendChild(tr);
             });
             
