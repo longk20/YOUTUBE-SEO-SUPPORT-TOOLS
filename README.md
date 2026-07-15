@@ -1,4 +1,4 @@
-# [YOUTUBE SEO SUPPORT TOOLS](https://longk20.github.io/TOOLS-WITH-SEO-YOUTUBE/)
+# [YOUTUBE SEO SUPPORT TOOLS](https://longk20.github.io/YOUTUBE-SEO-SUPPORT-TOOLS/)
 
 # YouTube Data Extraction Toolkit
 
@@ -28,7 +28,6 @@ A collection of lightweight web-based tools for extracting and analyzing YouTube
 - Quick start guide for beginners.
 
 ## Features
-
 - Built with HTML, CSS, and Vanilla JavaScript
 - Uses YouTube Data API v3
 - No backend required
@@ -37,12 +36,10 @@ A collection of lightweight web-based tools for extracting and analyzing YouTube
 - Optimized for SEO research and data analysis
 
 ## Requirements
-
 - A valid YouTube Data API v3 Key
 - Modern web browser
 
 ## License
-
 MIT License
 
-This site is open source. [Improve this page](https://github.com/longk20/TOOLS-WITH-SEO-YOUTUBE/edit/main/README.md).
+This site is open source. [Improve this page](https://github.com/longk20/YOUTUBE-SEO-SUPPORT-TOOLS/edit/main/README.md).
