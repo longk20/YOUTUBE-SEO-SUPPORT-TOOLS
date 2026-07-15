@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube SEO Support Tools</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+            padding-top: 30px;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        header p {
+            font-size: 1.2em;
+            opacity: 0.95;
+            margin-bottom: 10px;
+        }
+        
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+        
+        .tool-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .tool-card h3 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+        }
+        
+        .tool-card p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .tool-card ul {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+        
+        .tool-card ul li {
+            color: #666;
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .tool-card ul li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            transition: opacity 0.3s ease;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+        }
+        
+        .features {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .features h2 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .features-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+        }
+        
+        .feature-item {
+            text-align: center;
+        }
+        
+        .feature-item h4 {
+            color: #764ba2;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+        
+        .feature-item p {
+            color: #666;
+            line-height: 1.6;
+        }
+        
+        .requirements {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .requirements h2 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        
+        .requirements ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .requirements ul li {
+            color: #666;
+            padding: 12px 0;
+            padding-left: 30px;
+            position: relative;
+            font-size: 1.1em;
+        }
+        
+        .requirements ul li:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        footer {
+            text-align: center;
+            color: white;
+            padding: 30px 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 50px;
+        }
+        
+        footer p {
+            margin: 5px 0;
+        }
+        
+        .language-switch {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .lang-btn {
+            padding: 8px 15px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.3s ease;
+        }
+        
+        .lang-btn.active {
+            opacity: 1;
+        }
+        
+        .lang-btn:not(.active) {
+            opacity: 0.6;
+        }
+        
+        .lang-btn:hover {
+            opacity: 1;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .language-switch {
+                position: static;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="language-switch">
+        <button class="lang-btn active" onclick="switchLanguage('en')">English</button>
+        <button class="lang-btn" onclick="switchLanguage('vi')">Tiếng Việt</button>
+    </div>
+    
+    <div class="container">
+        <header id="header-en">
+            <h1>🎥 YouTube SEO Support Tools</h1>
+            <p>Professional Tools for YouTube Data Analysis & SEO Optimization</p>
+        </header>
+        
+        <header id="header-vi" class="hidden">
+            <h1>🎥 Công Cụ YouTube SEO</h1>
+            <p>Công cụ chuyên nghiệp để phân tích dữ liệu YouTube và tối ưu hóa SEO</p>
+        </header>
+        
+        <div class="tools-grid">
+            <!-- Tool 1: Comment Extractor -->
+            <div class="tool-card">
+                <h3 id="tool1-title">📝 YouTube Comment Extractor</h3>
+                <p id="tool1-desc">Extract comments from one or multiple YouTube channels easily</p>
+                <ul id="tool1-features">
+                    <li>Extract comments from channels</li>
+                    <li>Get channel names & video URLs</li>
+                    <li>Export to Excel format</li>
+                    <li>AI analysis ready</li>
+                </ul>
+                <button class="btn" onclick="openTool('Tools%20collect%20comments.html')" id="tool1-btn">Open Tool</button>
+            </div>
+            
+            <!-- Tool 2: Tag Extractor -->
+            <div class="tool-card">
+                <h3 id="tool2-title">🏷️ YouTube Tag Extractor</h3>
+                <p id="tool2-desc">Extract and analyze tags from YouTube videos</p>
+                <ul id="tool2-features">
+                    <li>Extract tags from videos</li>
+                    <li>Analyze channel tag trends</li>
+                    <li>SEO-friendly keywords</li>
+                    <li>Keyword research support</li>
+                </ul>
+                <button class="btn" onclick="openTool('Youtube%20Tag%20Tracker.html')" id="tool2-btn">Open Tool</button>
+            </div>
+            
+            <!-- Tool 3: Keyword Research -->
+            <div class="tool-card">
+                <h3 id="tool3-title">🔍 YouTube Keyword Research</h3>
+                <p id="tool3-desc">Research keywords for SEO and content planning</p>
+                <ul id="tool3-features">
+                    <li>YouTube keyword research</li>
+                    <li>SEO optimization tips</li>
+                    <li>Content planning support</li>
+                    <li>Trend analysis</li>
+                </ul>
+                <button class="btn" onclick="openTool('Keyword%20Research.html')" id="tool3-btn">Open Tool</button>
+            </div>
+        </div>
+        
+        <!-- Features Section -->
+        <div class="features">
+            <h2 id="features-title">✨ Features</h2>
+            <div class="features-list">
+                <div class="feature-item">
+                    <h4 id="feature1">⚡ Lightweight & Fast</h4>
+                    <p id="feature1-desc">No heavy server, runs directly in your browser</p>
+                </div>
+                <div class="feature-item">
+                    <h4 id="feature2">🔌 YouTube Data API v3</h4>
+                    <p id="feature2-desc">Official YouTube API integration</p>
+                </div>
+                <div class="feature-item">
+                    <h4 id="feature3">📱 Responsive Design</h4>
+                    <p id="feature3-desc">Works on desktop, tablet, and mobile</p>
+                </div>
+                <div class="feature-item">
+                    <h4 id="feature4">🌐 Bilingual Interface</h4>
+                    <p id="feature4-desc">English and Vietnamese support</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Requirements Section -->
+        <div class="requirements">
+            <h2 id="requirements-title">📋 Requirements</h2>
+            <ul>
+                <li id="req1">Valid YouTube Data API v3 Key</li>
+                <li id="req2">Modern web browser (Chrome, Firefox, Safari, Edge)</li>
+                <li id="req3"><a href="API%20YOUTUBE.txt" style="color: #667eea; text-decoration: none;">📖 Get API Key Guide →</a></li>
+            </ul>
+        </div>
+        
+        <footer>
+            <p id="footer-text">© 2026 YouTube SEO Support Tools - MIT License</p>
+            <p id="footer-github"><a href="https://github.com/longk20/YOUTUBE-SEO-SUPPORT-TOOLS" style="color: white; text-decoration: none;">View on GitHub →</a></p>
+        </footer>
+    </div>
+    
+    <script>
+        const translations = {
+            en: {
+                'header-title': '🎥 YouTube SEO Support Tools',
+                'header-subtitle': 'Professional Tools for YouTube Data Analysis & SEO Optimization',
+                'tool1-title': '📝 YouTube Comment Extractor',
+                'tool1-desc': 'Extract comments from one or multiple YouTube channels easily',
+                'tool1-feature1': 'Extract comments from channels',
+                'tool1-feature2': 'Get channel names & video URLs',
+                'tool1-feature3': 'Export to Excel format',
+                'tool1-feature4': 'AI analysis ready',
+                'tool1-btn': 'Open Tool',
+                'tool2-title': '🏷️ YouTube Tag Extractor',
+                'tool2-desc': 'Extract and analyze tags from YouTube videos',
+                'tool2-feature1': 'Extract tags from videos',
+                'tool2-feature2': 'Analyze channel tag trends',
+                'tool2-feature3': 'SEO-friendly keywords',
+                'tool2-feature4': 'Keyword research support',
+                'tool2-btn': 'Open Tool',
+                'tool3-title': '🔍 YouTube Keyword Research',
+                'tool3-desc': 'Research keywords for SEO and content planning',
+                'tool3-feature1': 'YouTube keyword research',
+                'tool3-feature2': 'SEO optimization tips',
+                'tool3-feature3': 'Content planning support',
+                'tool3-feature4': 'Trend analysis',
+                'tool3-btn': 'Open Tool',
+                'features-title': '✨ Features',
+                'feature1': '⚡ Lightweight & Fast',
+                'feature1-desc': 'No heavy server, runs directly in your browser',
+                'feature2': '🔌 YouTube Data API v3',
+                'feature2-desc': 'Official YouTube API integration',
+                'feature3': '📱 Responsive Design',
+                'feature3-desc': 'Works on desktop, tablet, and mobile',
+                'feature4': '🌐 Bilingual Interface',
+                'feature4-desc': 'English and Vietnamese support',
+                'requirements-title': '📋 Requirements',
+                'req1': 'Valid YouTube Data API v3 Key',
+                'req2': 'Modern web browser (Chrome, Firefox, Safari, Edge)',
+                'footer-text': '© 2026 YouTube SEO Support Tools - MIT License'
+            },
+            vi: {
+                'header-title': '🎥 Công Cụ YouTube SEO',
+                'header-subtitle': 'Công cụ chuyên nghiệp để phân tích dữ liệu YouTube và tối ưu hóa SEO',
+                'tool1-title': '📝 Công Cụ Trích Xuất Bình Luận YouTube',
+                'tool1-desc': 'Trích xuất bình luận từ một hoặc nhiều kênh YouTube dễ dàng',
+                'tool1-feature1': 'Trích xuất bình luận từ kênh',
+                'tool1-feature2': 'Lấy tên kênh & URL video',
+                'tool1-feature3': 'Xuất ra định dạng Excel',
+                'tool1-feature4': 'Sẵn sàng cho phân tích AI',
+                'tool1-btn': 'Mở Công Cụ',
+                'tool2-title': '🏷️ Công Cụ Trích Xuất Thẻ YouTube',
+                'tool2-desc': 'Trích xuất và phân tích thẻ từ các video YouTube',
+                'tool2-feature1': 'Trích xuất thẻ từ video',
+                'tool2-feature2': 'Phân tích xu hướng thẻ kênh',
+                'tool2-feature3': 'Từ khóa thân thiện với SEO',
+                'tool2-feature4': 'Hỗ trợ nghiên cứu từ khóa',
+                'tool2-btn': 'Mở Công Cụ',
+                'tool3-title': '🔍 Nghiên Cứu Từ Khóa YouTube',
+                'tool3-desc': 'Nghiên cứu từ khóa để tối ưu hóa SEO và lập kế hoạch nội dung',
+                'tool3-feature1': 'Nghiên cứu từ khóa YouTube',
+                'tool3-feature2': 'Mẹo tối ưu hóa SEO',
+                'tool3-feature3': 'Hỗ trợ lập kế hoạch nội dung',
+                'tool3-feature4': 'Phân tích xu hướng',
+                'tool3-btn': 'Mở Công Cụ',
+                'features-title': '✨ Tính Năng',
+                'feature1': '⚡ Nhẹ & Nhanh',
+                'feature1-desc': 'Không cần máy chủ nặng, chạy trực tiếp trong trình duyệt',
+                'feature2': '🔌 YouTube Data API v3',
+                'feature2-desc': 'Tích hợp API YouTube chính thức',
+                'feature3': '📱 Thiết Kế Đáp Ứng',
+                'feature3-desc': 'Hoạt động trên máy tính để bàn, máy tính bảng và điện thoại',
+                'feature4': '🌐 Giao Diện Hai Ngôn Ngữ',
+                'feature4-desc': 'Hỗ trợ Tiếng Anh và Tiếng Việt',
+                'requirements-title': '📋 Yêu Cầu',
+                'req1': 'Khóa YouTube Data API v3 hợp lệ',
+                'req2': 'Trình duyệt hiện đại (Chrome, Firefox, Safari, Edge)',
+                'footer-text': '© 2026 YouTube SEO Support Tools - MIT License'
+            }
+        };
+        
+        function switchLanguage(lang) {
+            // Update language buttons
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Hide all headers
+            document.getElementById('header-en').classList.add('hidden');
+            document.getElementById('header-vi').classList.add('hidden');
+            
+            // Show current language header
+            document.getElementById('header-' + lang).classList.remove('hidden');
+            
+            // Save to localStorage
+            localStorage.setItem('language', lang);
+        }
+        
+        function openTool(toolPath) {
+            window.location.href = toolPath;
+        }
+        
+        // Load saved language on page load
+        window.addEventListener('load', function() {
+            const savedLang = localStorage.getItem('language') || 'en';
+            const buttons = document.querySelectorAll('.lang-btn');
+            buttons.forEach((btn, index) => {
+                if ((index === 0 && savedLang === 'en') || (index === 1 && savedLang === 'vi')) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            
+            if (savedLang !== 'en') {
+                document.getElementById('header-en').classList.add('hidden');
+                document.getElementById('header-vi').classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
