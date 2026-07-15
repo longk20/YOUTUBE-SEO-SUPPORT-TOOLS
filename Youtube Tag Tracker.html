@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Tag Extractor Pro</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f2f5; color: #333; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; position: relative;}
+        
+        /* NÚT CHUYỂN NGÔN NGỮ TỐI ƯU */
+        .lang-toggle { position: absolute; top: 20px; right: 20px; background: #333; color: #fff; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 14px;}
+        .lang-toggle:hover { background: #555; }
+
+        .container { background-color: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 100%; max-width: 800px; margin-top: 30px;}
+        h1 { text-align: center; color: #ff0000; margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        label { font-weight: bold; display: block; margin-bottom: 5px; }
+        input[type="text"], input[type="password"], select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 16px; }
+        button.action-btn { width: 100%; padding: 12px; background-color: #ff0000; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        button.action-btn:hover { background-color: #cc0000; }
+        button.action-btn:disabled { background-color: #ccc; cursor: not-allowed; }
+        #status { margin-top: 15px; font-weight: bold; text-align: center; color: #0066cc; }
+        
+        #copySection { margin-top: 25px; padding: 15px; background-color: #f8f9fa; border: 2px dashed #28a745; border-radius: 8px; display: none; }
+        #copySection h3 { margin-top: 0; color: #28a745; text-align: center; }
+        textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; font-size: 15px; resize: vertical; }
+        .char-count { text-align: right; font-size: 13px; color: #666; margin-top: 5px; font-weight: bold;}
+        #btnCopy { background-color: #28a745; margin-top: 10px; width: 100%; padding: 12px; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s;}
+        #btnCopy:hover { background-color: #218838; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background-color: #f8f9fa; color: #333; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+    </style>
+</head>
+<body>
+
+<button class="lang-toggle" onclick="toggleLanguage()" id="btnLang">🇬🇧 Switch to English</button>
+
+<div class="container">
+    <h1 id="t_title">🔥 YouTube Tag Extractor Pro</h1>
+    
+    <div class="form-group">
+        <label id="t_apiLabel">1. Nhập YouTube API Key:</label>
+        <input type="password" id="apiKey" placeholder="AIzaSy...">
+    </div>
+
+    <div class="form-group">
+        <label id="t_modeLabel">2. Chọn Chế độ Quét:</label>
+        <select id="searchType" onchange="changeLabel()">
+            <option value="keyword" id="t_optKeyword">🔍 Quét theo Từ khóa (Lọc ra Top Tag từ 50 Video đề xuất)</option>
+            <option value="channel" id="t_optChannel">👤 Quét theo Kênh (Lọc ra Top Tag từ 50 Video nhiều view nhất)</option>
+            <option value="video" id="t_optVideo">▶️ Quét 1 Video cụ thể (Lấy trọn bộ Tag của riêng video đó)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label id="t_inputLabel">3. Nhập Từ khóa:</label>
+        <input type="text" id="keyword" placeholder="Ví dụ: Christmas Songs">
+    </div>
+
+    <button id="btnSearch" class="action-btn" onclick="runTool()">Bắt đầu Quét</button>
+
+    <div id="status"></div>
+
+    <div id="copySection">
+        <h3 id="t_copyTitle">📋 BỘ TAG ĐÃ SẴN SÀNG</h3>
+        <textarea id="tagResultText" rows="4" readonly></textarea>
+        <div class="char-count"><span id="t_charCount">Số ký tự:</span> <span id="charCountNum">0</span> / 500</div>
+        <button id="btnCopy" onclick="copyTags()">✂️ Copy Toàn Bộ Tag</button>
+    </div>
+    
+    <table id="resultTable" style="display: none;">
+        <thead>
+            <tr>
+                <th id="t_th1">STT</th>
+                <th id="t_th2">Thẻ Tag (Từ khóa)</th>
+                <th id="t_th3">Số video dùng</th>
+                <th id="t_th4">Tỷ lệ (%)</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<script>
+    // =====================================
+    // HỆ THỐNG TỪ ĐIỂN SONG NGỮ (DICTIONARY)
+    // =====================================
+    const i18n = {
+        vi: {
+            btnLang: "🇬🇧 Switch to English",
+            title: "🔥 YouTube Tag Extractor Pro",
+            apiLabel: "1. Nhập YouTube API Key:",
+            modeLabel: "2. Chọn Chế độ Quét:",
+            optKeyword: "🔍 Quét theo Từ khóa (Lọc ra Top Tag từ 50 Video đề xuất)",
+            optChannel: "👤 Quét theo Kênh (Lọc ra Top Tag từ 50 Video nhiều view nhất)",
+            optVideo: "▶️ Quét 1 Video cụ thể (Lấy trọn bộ Tag của riêng video đó)",
+            labelKeyword: "3. Nhập Từ khóa:",
+            labelChannel: "3. Nhập Tên Kênh / @Handle:",
+            labelVideo: "3. Dán Link Video YouTube:",
+            phKeyword: "Ví dụ: Christmas Songs",
+            phChannel: "Ví dụ: @hoanglongmck",
+            phVideo: "Ví dụ: https://www.youtube.com/watch?v=...",
+            btnSearch: "Bắt đầu Quét",
+            copyTitle: "📋 BỘ TAG ĐÃ SẴN SÀNG",
+            charCount: "Số ký tự:",
+            btnCopy: "✂️ Copy Toàn Bộ Tag",
+            th1: "STT", th2: "Thẻ Tag (Từ khóa)", th3: "Số video dùng", th4: "Tỷ lệ (%)",
+            alertInput: "Vui lòng điền đầy đủ API Key và dữ liệu đầu vào!",
+            statAnalyzing: "⏳ Đang phân tích Link Video...",
+            statScanKey: "⏳ Đang quét Top 50 video đề xuất cao nhất...",
+            statFindChan: "⏳ Đang tìm định danh của Kênh...",
+            errInvalidVid: "Link Video không hợp lệ! Vui lòng copy đúng link YouTube.",
+            errNoChan: "Không tìm thấy kênh nào mang tên này!",
+            statGetVid: "⏳ Đang lấy 50 video xem nhiều nhất của Kênh đối thủ...",
+            errNoVid: "Không tìm thấy video nào để phân tích!",
+            statExtract: "⏳ Đang bóc tách thẻ Tag ẩn...",
+            errNoTag: "Video này (hoặc các video này) không sử dụng thẻ Tag nào!",
+            succVid: "✅ Phân tích thành công! Trọn bộ Tag của video này nằm ở hộp bên dưới.",
+            succMulti: "✅ Quét hoàn tất! (Đã bóc tách thành công từ {num} video).",
+            btnCopied: "✅ Đã Copy Thành Công!",
+            errCopy: "Có lỗi khi Copy: "
+        },
+        en: {
+            btnLang: "🇻🇳 Đổi sang Tiếng Việt",
+            title: "🔥 YouTube Tag Extractor Pro",
+            apiLabel: "1. Enter YouTube API Key:",
+            modeLabel: "2. Select Scan Mode:",
+            optKeyword: "🔍 By Keyword (Extract Top Tags from 50 suggested videos)",
+            optChannel: "👤 By Channel (Extract Top Tags from 50 most viewed videos)",
+            optVideo: "▶️ Single Video (Extract all tags from a specific video)",
+            labelKeyword: "3. Enter Keyword:",
+            labelChannel: "3. Enter Channel Name / @Handle:",
+            labelVideo: "3. Paste YouTube Video Link:",
+            phKeyword: "Example: Christmas Songs",
+            phChannel: "Example: @hoanglongmck",
+            phVideo: "Example: https://www.youtube.com/watch?v=...",
+            btnSearch: "Start Scanning",
+            copyTitle: "📋 TAGS ARE READY",
+            charCount: "Characters:",
+            btnCopy: "✂️ Copy All Tags",
+            th1: "#", th2: "Tag (Keyword)", th3: "Video Count", th4: "Ratio (%)",
+            alertInput: "Please fill in both API Key and input data!",
+            statAnalyzing: "⏳ Analyzing Video Link...",
+            statScanKey: "⏳ Scanning Top 50 highest suggested videos...",
+            statFindChan: "⏳ Finding Channel ID...",
+            errInvalidVid: "Invalid Video Link! Please copy a valid YouTube link.",
+            errNoChan: "No channel found with this name!",
+            statGetVid: "⏳ Getting 50 most viewed videos from the competitor...",
+            errNoVid: "No videos found to analyze!",
+            statExtract: "⏳ Extracting hidden tags...",
+            errNoTag: "This video (or these videos) does not use any tags!",
+            succVid: "✅ Analysis successful! All tags for this video are in the box below.",
+            succMulti: "✅ Scan complete! (Successfully extracted from {num} videos).",
+            btnCopied: "✅ Copied Successfully!",
+            errCopy: "Error copying: "
+        }
+    };
+
+    let currentLang = 'vi';
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'vi' ? 'en' : 'vi';
+        const t = i18n[currentLang];
+        
+        document.getElementById('btnLang').innerText = t.btnLang;
+        document.getElementById('t_title').innerText = t.title;
+        document.getElementById('t_apiLabel').innerText = t.apiLabel;
+        document.getElementById('t_modeLabel').innerText = t.modeLabel;
+        document.getElementById('t_optKeyword').innerText = t.optKeyword;
+        document.getElementById('t_optChannel').innerText = t.optChannel;
+        document.getElementById('t_optVideo').innerText = t.optVideo;
+        document.getElementById('btnSearch').innerText = t.btnSearch;
+        document.getElementById('t_copyTitle').innerText = t.copyTitle;
+        document.getElementById('t_charCount').innerText = t.charCount;
+        document.getElementById('btnCopy').innerText = t.btnCopy;
+        document.getElementById('t_th1').innerText = t.th1;
+        document.getElementById('t_th2').innerText = t.th2;
+        document.getElementById('t_th3').innerText = t.th3;
+        document.getElementById('t_th4').innerText = t.th4;
+
+        changeLabel(); // Cập nhật luôn placeholder và label ô số 3
+    }
+
+    // =====================================
+    // LOGIC CODE CŨ ĐƯỢC GIỮ NGUYÊN (CÓ CHÈN TỪ ĐIỂN)
+    // =====================================
+    function changeLabel() {
+        const type = document.getElementById('searchType').value;
+        const label = document.getElementById('t_inputLabel');
+        const input = document.getElementById('keyword');
+        const t = i18n[currentLang];
+
+        if(type === 'keyword') {
+            label.innerText = t.labelKeyword;
+            input.placeholder = t.phKeyword;
+        } else if (type === 'channel') {
+            label.innerText = t.labelChannel;
+            input.placeholder = t.phChannel;
+        } else {
+            label.innerText = t.labelVideo;
+            input.placeholder = t.phVideo;
+        }
+    }
+
+    function extractVideoID(url) {
+        let regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+        let match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    }
+
+    async function runTool() {
+        const apiKey = document.getElementById('apiKey').value.trim();
+        const searchType = document.getElementById('searchType').value;
+        const keyword = document.getElementById('keyword').value.trim();
+        const statusDiv = document.getElementById('status');
+        const resultTable = document.getElementById('resultTable');
+        const tableBody = document.getElementById('tableBody');
+        const btn = document.getElementById('btnSearch');
+        const copySection = document.getElementById('copySection');
+        const t = i18n[currentLang];
+
+        if (!apiKey || !keyword) {
+            alert(t.alertInput);
+            return;
+        }
+
+        btn.disabled = true;
+        resultTable.style.display = 'none';
+        copySection.style.display = 'none';
+        tableBody.innerHTML = '';
+        statusDiv.style.color = '#0066cc';
+
+        try {
+            let videoIds = [];
+            
+            if (searchType === 'video') {
+                statusDiv.innerText = t.statAnalyzing;
+                const videoId = extractVideoID(keyword);
+                if(!videoId) throw new Error(t.errInvalidVid);
+                videoIds.push(videoId);
+            }
+            else if (searchType === 'keyword') {
+                statusDiv.innerText = t.statScanKey;
+                const searchRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=id&type=video&order=relevance&maxResults=50&q=${encodeURIComponent(keyword)}&key=${apiKey}`);
+                const searchData = await searchRes.json();
+                if (searchData.error) throw new Error(searchData.error.message);
+                searchData.items.forEach(item => videoIds.push(item.id.videoId));
+            } 
+            else if (searchType === 'channel') {
+                statusDiv.innerText = t.statFindChan;
+                const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=id&type=channel&q=${encodeURIComponent(keyword)}&maxResults=1&key=${apiKey}`);
+                const channelData = await channelRes.json();
+                if (channelData.error) throw new Error(channelData.error.message);
+                if (channelData.items.length === 0) throw new Error(t.errNoChan);
+                
+                const channelId = channelData.items[0].id.channelId;
+                statusDiv.innerText = t.statGetVid;
+                const channelVideosRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=id&type=video&channelId=${channelId}&order=viewCount&maxResults=50&key=${apiKey}`);
+                const channelVideosData = await channelVideosRes.json();
+                if (channelVideosData.error) throw new Error(channelVideosData.error.message);
+                channelVideosData.items.forEach(item => videoIds.push(item.id.videoId));
+            }
+
+            if (videoIds.length === 0) throw new Error(t.errNoVid);
+
+            statusDiv.innerText = t.statExtract;
+
+            let allTags = [];
+            let videosWithTags = 0;
+
+            const chunk = videoIds.join(',');
+            const videoUrl = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${chunk}&key=${apiKey}`;
+            const videoRes = await fetch(videoUrl);
+            const videoData = await videoRes.json();
+
+            if (videoData.error) throw new Error(videoData.error.message);
+
+            videoData.items.forEach(item => {
+                const tags = item.snippet.tags;
+                if (tags && tags.length > 0) {
+                    videosWithTags++;
+                    const uniqueTags = [...new Set(tags.map(t => t.toLowerCase()))];
+                    
+                    if(searchType === 'video') {
+                        allTags = uniqueTags; 
+                    } else {
+                        uniqueTags.forEach(tag => allTags.push(tag));
+                    }
+                }
+            });
+
+            if (videosWithTags === 0) throw new Error(t.errNoTag);
+
+            let sortedTags = [];
+            if (searchType === 'video') {
+                sortedTags = allTags.map(tag => [tag, 1]);
+            } else {
+                const tagCounts = {};
+                allTags.forEach(tag => { tagCounts[tag] = (tagCounts[tag] || 0) + 1; });
+                sortedTags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]).slice(0, 30);
+            }
+
+            let tagsOnlyArray = [];
+            let currentStringLength = 0;
+
+            for (let i = 0; i < sortedTags.length; i++) {
+                let tag = sortedTags[i][0];
+                let addedLength = tag.length + (tagsOnlyArray.length > 0 ? 2 : 0);
+                if (currentStringLength + addedLength <= 500) {
+                    tagsOnlyArray.push(tag);
+                    currentStringLength += addedLength;
+                }
+            }
+
+            const commaSeparatedString = tagsOnlyArray.join(', ');
+            document.getElementById('tagResultText').value = commaSeparatedString;
+            document.getElementById('charCountNum').innerText = commaSeparatedString.length;
+            copySection.style.display = 'block';
+
+            if (searchType === 'video') {
+                statusDiv.style.color = 'green';
+                statusDiv.innerText = t.succVid;
+            } else {
+                sortedTags.forEach((item, index) => {
+                    const count = item[1];
+                    const percentage = ((count / videosWithTags) * 100).toFixed(1);
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="text-align:center;">${index + 1}</td>
+                        <td style="font-weight:bold;">${item[0]}</td>
+                        <td style="text-align:center;">${count}</td>
+                        <td style="text-align:center; font-weight:bold; color: #d32f2f;">${percentage}%</td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+                statusDiv.style.color = 'green';
+                statusDiv.innerText = t.succMulti.replace("{num}", videosWithTags);
+                resultTable.style.display = 'table';
+            }
+
+        } catch (error) {
+            statusDiv.style.color = 'red';
+            statusDiv.innerText = `❌ Error: ${error.message}`;
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function copyTags() {
+        const t = i18n[currentLang];
+        const copyText = document.getElementById("tagResultText");
+        copyText.select();
+        copyText.setSelectionRange(0, 99999); 
+        try {
+            document.execCommand('copy');
+            const btn = document.getElementById("btnCopy");
+            btn.innerText = t.btnCopied;
+            btn.style.backgroundColor = "#17a2b8"; 
+            setTimeout(() => {
+                btn.innerText = t.btnCopy;
+                btn.style.backgroundColor = "#28a745";
+            }, 3000);
+        } catch (err) {
+            alert(t.errCopy + err);
+        }
+        window.getSelection().removeAllRanges();
+    }
+</script>
+
+</body>
+</html>

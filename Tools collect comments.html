@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube Comment Extractor Pro</title>
+<style>
+  :root{
+    --wine: #3B0F14; --wine-deep: #260A0D; --gold: #C79A3C;
+    --cream: #FBF4EC; --ink: #2A1418; --muted: #8C6B6B; --line: #E4CFC7;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--cream); color:var(--ink);
+    font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    line-height:1.5; position: relative;
+  }
+  
+  .lang-toggle { position: absolute; top: 20px; right: 20px; background: var(--wine); color: #fff; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 14px;}
+  .lang-toggle:hover { background: var(--wine-deep); }
+
+  .wrap{max-width:1000px;margin:0 auto;padding:40px 24px 80px;}
+  header{margin-bottom:32px;border-bottom:2px solid var(--wine);padding-bottom:20px; margin-top: 20px;}
+  header .eyebrow{
+    letter-spacing:.14em;text-transform:uppercase;font-size:11px;
+    color:var(--gold); font-weight:700; margin:0 0 6px;
+  }
+  h1{margin:0; font-size:28px; color:var(--wine); font-weight:700;}
+  .sub{color:var(--muted); font-size:14px; margin-top:8px;}
+  
+  .card{
+    background:#fff; border:1px solid var(--line); border-radius:10px;
+    padding:24px; margin-bottom:20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  }
+  label{display:block; font-size:13px; font-weight: 600; color:#444; margin:14px 0 6px;}
+  input[type=password], textarea, select{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:6px;
+    font-size:14px; font-family:inherit; background:#fafafa;
+  }
+  textarea{min-height:100px; resize:vertical;}
+  .row{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+  
+  button.action-btn{
+    background:var(--wine); color:#fff; border:none; border-radius:6px;
+    padding:14px 24px; font-size:15px; font-weight:700; cursor:pointer;
+    width: 100%; margin-top:20px; transition: 0.3s;
+  }
+  button.action-btn:hover{background:var(--wine-deep);}
+  button.action-btn:disabled{background:#bba; cursor:not-allowed;}
+  
+  #log{
+    font-family:"SF Mono", Menlo, monospace; font-size:12.5px; white-space:pre-wrap;
+    background:var(--wine-deep); color:#F3D9C9; border-radius:8px; padding:16px;
+    max-height:220px; overflow-y:auto; display:none; margin-top:18px;
+  }
+  
+  /* KHU VỰC BẢNG KẾT QUẢ DATA THÔ */
+  #resultContainer { display: none; margin-top: 20px; }
+  .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;}
+  .result-header h3 { color: var(--wine); margin: 0; }
+  .stats { font-size: 13px; color: var(--muted); font-weight: bold;}
+  
+  .table-wrapper {
+      max-height: 500px; overflow-y: auto; border: 1px solid #ccc; border-radius: 6px;
+  }
+  table { width: 100%; border-collapse: collapse; background: #fff; font-size: 14px; }
+  th, td { border: 1px solid #ddd; padding: 10px; vertical-align: top; }
+  th { background-color: #f8f9fa; color: #333; position: sticky; top: 0; z-index: 1;}
+  td:nth-child(1) { text-align: center; font-weight: bold;}
+  td:nth-child(2) { font-weight: 600; white-space: nowrap;}
+  td:nth-child(3) a { color: #1a73e8; text-decoration: none; word-break: break-all;}
+  td:nth-child(3) a:hover { text-decoration: underline; }
+  
+  #btnCopy { background-color: #4A7A5E; margin-top: 15px; width: 100%; padding: 12px; color: white; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s;}
+  #btnCopy:hover { background-color: #365c45; }
+
+</style>
+</head>
+<body>
+
+<button class="lang-toggle" onclick="toggleLanguage()" id="btnLang">🇬🇧 Switch to English</button>
+
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow" id="t_eyebrow">Công cụ Data Extraction</p>
+    <h1 id="t_title">Trích Xuất Bình Luận Khán Giả</h1>
+    <p class="sub" id="t_sub">Tự động cào bình luận kèm thông tin Kênh và Link Video. Kết quả tối ưu cho Excel/AI.</p>
+  </header>
+
+  <div class="card">
+    <label id="t_ytLabel">🔑 YouTube Data API Key:</label>
+    <input type="password" id="ytKey" placeholder="AIzaSy...">
+  </div>
+
+  <div class="card">
+    <label id="t_chanLabel">🔗 Danh sách Handle kênh (Mỗi dòng 1 kênh, VD: @lunaromance1):</label>
+    <textarea id="channels" placeholder="@lunaromance1&#10;@vientolibre7080"></textarea>
+
+    <div class="row">
+      <div>
+        <label id="t_vidLabel">🎬 Số video top-view / kênh:</label>
+        <select id="numVideos">
+          <option value="3" id="t_v3" selected>3 video</option>
+          <option value="5" id="t_v5">5 video</option>
+          <option value="10" id="t_v10">10 video</option>
+        </select>
+      </div>
+      <div>
+        <label id="t_cmtLabel">💬 Số comment / video:</label>
+        <select id="numComments">
+          <option value="50" id="t_c50">50 comment</option>
+          <option value="100" id="t_c100" selected>100 comment</option>
+        </select>
+      </div>
+    </div>
+
+    <button id="runBtn" class="action-btn" onclick="runExtraction()">🚀 Tiến hành Cào Bình Luận</button>
+  </div>
+
+  <div id="log"></div>
+
+  <!-- KHU VỰC HIỂN THỊ KẾT QUẢ DẠNG BẢNG -->
+  <div id="resultContainer">
+    <div class="result-header">
+        <h3 id="t_resTitle">📋 Bảng Dữ Liệu Bình Luận (Raw Data)</h3>
+        <div class="stats" id="dataStats">Số lượng: 0 | Ước tính: ~0 tokens</div>
+    </div>
+    
+    <div class="table-wrapper">
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th id="t_thSTT" style="width: 5%;">STT</th>
+                    <th id="t_thChannel" style="width: 15%;">Kênh</th>
+                    <th id="t_thVideo" style="width: 25%;">Link Video</th>
+                    <th id="t_thCmt" style="width: 55%;">Nội dung Bình luận</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <button id="btnCopy" onclick="copyTable()">✂️ Copy Bảng Để Dán Vào Excel</button>
+  </div>
+
+</div>
+
+<script>
+    // =====================================
+    // HỆ THỐNG TỪ ĐIỂN SONG NGỮ
+    // =====================================
+    const i18n = {
+        vi: {
+            btnLang: "🇬🇧 Switch to English",
+            eyebrow: "Công cụ Data Extraction",
+            title: "Trích Xuất Bình Luận Khán Giả",
+            sub: "Tự động cào bình luận kèm thông tin Kênh và Link Video. Kết quả tối ưu cho Excel/AI.",
+            ytLabel: "🔑 YouTube Data API Key:",
+            chanLabel: "🔗 Danh sách Handle kênh (Mỗi dòng 1 kênh, VD: @lunaromance1):",
+            vidLabel: "🎬 Số video top-view / kênh:",
+            cmtLabel: "💬 Số comment / video:",
+            optVid: " video", optCmt: " comment",
+            btnRun: "🚀 Tiến hành Cào Bình Luận",
+            resTitle: "📋 Bảng Dữ Liệu Bình Luận (Raw Data)",
+            btnCopy: "✂️ Copy Bảng Để Dán Vào Excel",
+            thSTT: "STT", thChannel: "Kênh", thVideo: "Link Video", thCmt: "Nội dung Bình luận",
+            alertInput: "Vui lòng điền đủ API Key và Kênh!",
+            logScan: "Đang quét kênh {handle}...",
+            logNotFound: "Không tìm thấy kênh {handle}",
+            logSuccess: "✅ Thành công! Đã gom được {num} bình luận.",
+            logNoCmt: "Không cào được bình luận nào!",
+            logErr: "Lỗi: ",
+            stats: "Số lượng: {num} bình luận | Kích thước văn bản: ~{tok} tokens",
+            copied: "✅ Đã Copy! Giờ bạn có thể dán vào Excel hoặc AI",
+            errCopy: "Có lỗi khi copy!"
+        },
+        en: {
+            btnLang: "🇻🇳 Đổi sang Tiếng Việt",
+            eyebrow: "Data Extraction Tool",
+            title: "YouTube Comment Extractor",
+            sub: "Automatically scrape comments with Channel Info and Video Links. Optimized for Excel/AI.",
+            ytLabel: "🔑 YouTube Data API Key:",
+            chanLabel: "🔗 Channel Handles (One per line, e.g. @lunaromance1):",
+            vidLabel: "🎬 Top-view videos / channel:",
+            cmtLabel: "💬 Comments / video:",
+            optVid: " videos", optCmt: " comments",
+            btnRun: "🚀 Start Extracting Comments",
+            resTitle: "📋 Comment Dataset (Raw Data)",
+            btnCopy: "✂️ Copy Table to Paste into Excel",
+            thSTT: "#", thChannel: "Channel", thVideo: "Video Link", thCmt: "Comment Content",
+            alertInput: "Please enter your API Key and Channel list!",
+            logScan: "Scanning channel {handle}...",
+            logNotFound: "Channel {handle} not found",
+            logSuccess: "✅ Success! Collected {num} comments.",
+            logNoCmt: "No comments extracted!",
+            logErr: "Error: ",
+            stats: "Count: {num} comments | Estimated text size: ~{tok} tokens",
+            copied: "✅ Copied! Ready to paste into Excel or AI",
+            errCopy: "Error copying!"
+        }
+    };
+
+    let currentLang = 'vi';
+    let currentStats = { num: 0, tok: 0 }; 
+
+    function toggleLanguage() {
+        currentLang = currentLang === 'vi' ? 'en' : 'vi';
+        const t = i18n[currentLang];
+        
+        document.getElementById('btnLang').innerText = t.btnLang;
+        document.getElementById('t_eyebrow').innerText = t.eyebrow;
+        document.getElementById('t_title').innerText = t.title;
+        document.getElementById('t_sub').innerText = t.sub;
+        document.getElementById('t_ytLabel').innerText = t.ytLabel;
+        document.getElementById('t_chanLabel').innerText = t.chanLabel;
+        document.getElementById('t_vidLabel').innerText = t.vidLabel;
+        document.getElementById('t_cmtLabel').innerText = t.cmtLabel;
+        
+        document.getElementById('t_v3').innerText = "3" + t.optVid;
+        document.getElementById('t_v5').innerText = "5" + t.optVid;
+        document.getElementById('t_v10').innerText = "10" + t.optVid;
+        document.getElementById('t_c50').innerText = "50" + t.optCmt;
+        document.getElementById('t_c100').innerText = "100" + t.optCmt;
+        
+        document.getElementById('runBtn').innerText = t.btnRun;
+        document.getElementById('t_resTitle').innerText = t.resTitle;
+        document.getElementById('btnCopy').innerText = t.btnCopy;
+
+        document.getElementById('t_thSTT').innerText = t.thSTT;
+        document.getElementById('t_thChannel').innerText = t.thChannel;
+        document.getElementById('t_thVideo').innerText = t.thVideo;
+        document.getElementById('t_thCmt').innerText = t.thCmt;
+
+        if(currentStats.num > 0) {
+            document.getElementById('dataStats').innerText = t.stats.replace("{num}", currentStats.num).replace("{tok}", currentStats.tok.toLocaleString());
+        }
+    }
+
+    const $ = id => document.getElementById(id);
+    let logBox = $('log');
+
+    function log(msg, isErr){
+        logBox.style.display = 'block';
+        const line = document.createElement('div');
+        line.textContent = (isErr ? '✗ ' : '· ') + msg;
+        if(isErr) line.style.color = '#FF9E90';
+        logBox.appendChild(line);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function extractHandle(rawLine){
+        const match = rawLine.trim().match(/@([\w.-]+)/);
+        return match ? '@' + match[1] : null;
+    }
+
+    async function ytFetch(url){
+        const res = await fetch(url);
+        const json = await res.json();
+        if(json.error) throw new Error(json.error.message);
+        return json;
+    }
+
+    // THUẬT TOÁN ĐÃ NÂNG CẤP ĐỂ LẤY TÊN KÊNH VÀ LINK VIDEO
+    async function getChannelAndVideosAndComments(handles, ytKey, numVid, numCmt, t) {
+        let allCommentsData = [];
+
+        for(const handle of handles){
+            log(t.logScan.replace("{handle}", handle));
+            const cleanHandle = handle.replace('@','').trim();
+            // Nâng cấp: Lấy thêm thuộc tính 'snippet' để móc Tên Kênh
+            const chUrl = `https://www.googleapis.com/youtube/v3/channels?part=id,snippet&forHandle=${encodeURIComponent(cleanHandle)}&key=${ytKey}`;
+            const chData = await ytFetch(chUrl);
+            
+            if(!chData.items || chData.items.length === 0) { 
+                log(t.logNotFound.replace("{handle}", handle), true); continue; 
+            }
+            
+            const channelId = chData.items[0].id;
+            const channelName = chData.items[0].snippet.title; // Lấy Tên kênh
+
+            const vidUrl = `https://www.googleapis.com/youtube/v3/search?part=id&channelId=${channelId}&order=viewCount&maxResults=${numVid}&type=video&key=${ytKey}`;
+            const vidData = await ytFetch(vidUrl);
+            const videoIds = (vidData.items || []).map(it => it.id.videoId);
+
+            for(const vId of videoIds){
+                const videoLink = `https://www.youtube.com/watch?v=${vId}`; // Tạo Link Video
+                const cmtUrl = `https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId=${vId}&maxResults=${numCmt}&order=relevance&textFormat=plainText&key=${ytKey}`;
+                try{
+                    const cmtData = await ytFetch(cmtUrl);
+                    // Nâng cấp: Lưu thành mảng Object thay vì chuỗi đơn thuần
+                    const cmts = (cmtData.items || []).map(it => {
+                        let text = it.snippet.topLevelComment.snippet.textOriginal;
+                        return {
+                            channel: channelName,
+                            videoUrl: videoLink,
+                            content: text.replace(/\n+/g, ' ').trim()
+                        };
+                    });
+                    allCommentsData.push(...cmts);
+                } catch(e) {} 
+            }
+        }
+        return allCommentsData;
+    }
+
+    async function runExtraction(){
+        const ytKey = $('ytKey').value.trim();
+        const channelsRaw = $('channels').value.trim();
+        const numVideos = parseInt($('numVideos').value);
+        const numComments = parseInt($('numComments').value);
+        const t = i18n[currentLang];
+
+        if(!ytKey || !channelsRaw){
+            alert(t.alertInput); return;
+        }
+
+        const rawLines = channelsRaw.split('\n').map(l => l.trim()).filter(Boolean);
+        const handles = rawLines.map(extractHandle).filter(Boolean);
+
+        $('runBtn').disabled = true;
+        $('resultContainer').style.display = 'none';
+        $('tableBody').innerHTML = ''; // Clear bảng cũ
+        logBox.innerHTML = ''; logBox.style.display = 'block';
+
+        try{
+            const commentsData = await getChannelAndVideosAndComments(handles, ytKey, numVideos, numComments, t);
+            if(commentsData.length === 0) throw new Error(t.logNoCmt);
+
+            log(t.logSuccess.replace("{num}", commentsData.length));
+
+            // ĐỔ DỮ LIỆU VÀO BẢNG
+            let totalChars = 0;
+            commentsData.forEach((item, index) => {
+                totalChars += item.content.length;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${item.channel}</td>
+                    <td><a href="${item.videoUrl}" target="_blank">${item.videoUrl}</a></td>
+                    <td>${item.content}</td>
+                `;
+                $('tableBody').appendChild(tr);
+            });
+            
+            // Tính toán token (Tương đối: 4 ký tự = 1 token)
+            const estimatedTokens = Math.floor(totalChars / 4);
+            currentStats = { num: commentsData.length, tok: estimatedTokens };
+            $('dataStats').innerText = t.stats.replace("{num}", commentsData.length).replace("{tok}", estimatedTokens.toLocaleString());
+
+            $('resultContainer').style.display = 'block';
+
+        }catch(e){
+            log(t.logErr + e.message, true);
+        }finally{
+            $('runBtn').disabled = false;
+        }
+    }
+
+    // HÀM COPY CHUẨN ĐỂ DÁN VÀO EXCEL
+    function copyTable() {
+        const t = i18n[currentLang];
+        const table = document.getElementById("resultTable");
+        const range = document.createRange();
+        range.selectNode(table);
+        window.getSelection().removeAllRanges(); 
+        window.getSelection().addRange(range); 
+        try {
+            document.execCommand('copy');
+            const btn = $('btnCopy');
+            btn.innerText = t.copied;
+            btn.style.backgroundColor = "#C79A3C";
+            setTimeout(() => {
+                btn.innerText = t.btnCopy;
+                btn.style.backgroundColor = "#4A7A5E";
+            }, 3000);
+        } catch (err) {
+            alert(t.errCopy);
+        }
+        window.getSelection().removeAllRanges();
+    }
+</script>
+</body>
+</html>
