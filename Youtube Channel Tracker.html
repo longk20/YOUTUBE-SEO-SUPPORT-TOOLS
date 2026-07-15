@@ -177,8 +177,8 @@
                 
                 const uploadsPlaylistId = channelData.contentDetails?.relatedPlaylists?.uploads || null;
 
-                let avgDurationText = "<span style='color:#9e9e9e'>Không có video mới</span>";
-                let freqText = "<span style='color:#9e9e9e'>0</span>";
+                let avgDurationText = "Không có video mới";
+                let freqText = "0";
 
                 // BƯỚC 3: TÍNH TẦN SUẤT VÀ THỜI LƯỢNG (An toàn tuyệt đối)
                 if (uploadsPlaylistId) {
@@ -215,26 +215,67 @@
                 }
 
                 // BƯỚC 4: IN DÒNG THÀNH CÔNG VÀO BẢNG
+                // FIX: AN TOÀN - dùng textContent thay vì innerHTML để tránh XSS
+                // (title/country lấy từ dữ liệu công khai của kênh YouTube)
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td style="font-weight:bold;">${title}</td>
-                    <td><a href="${url}" target="_blank">${customUrl || channelData.id}</a></td>
-                    <td>${country}</td>
-                    <td class="highlight">${formatNumber(subs)}</td>
-                    <td class="success">${formatNumber(views)}</td>
-                    <td style="background-color: #f1f8e9;">${avgDurationText}</td>
-                    <td style="background-color: #f1f8e9;">${freqText}</td>
-                `;
+
+                const tdTitle = document.createElement('td');
+                tdTitle.style.fontWeight = 'bold';
+                tdTitle.textContent = title;
+
+                const tdLink = document.createElement('td');
+                const a = document.createElement('a');
+                a.href = url;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                a.textContent = customUrl || channelData.id;
+                tdLink.appendChild(a);
+
+                const tdCountry = document.createElement('td');
+                tdCountry.textContent = country;
+
+                const tdSubs = document.createElement('td');
+                tdSubs.className = 'highlight';
+                tdSubs.textContent = formatNumber(subs);
+
+                const tdViews = document.createElement('td');
+                tdViews.className = 'success';
+                tdViews.textContent = formatNumber(views);
+
+                const tdAvgDur = document.createElement('td');
+                tdAvgDur.style.backgroundColor = '#f1f8e9';
+                tdAvgDur.textContent = avgDurationText;
+
+                const tdFreq = document.createElement('td');
+                tdFreq.style.backgroundColor = '#f1f8e9';
+                tdFreq.textContent = freqText;
+
+                tr.appendChild(tdTitle);
+                tr.appendChild(tdLink);
+                tr.appendChild(tdCountry);
+                tr.appendChild(tdSubs);
+                tr.appendChild(tdViews);
+                tr.appendChild(tdAvgDur);
+                tr.appendChild(tdFreq);
                 tableBody.appendChild(tr);
                 successCount++;
 
             } catch (err) {
                 const tr = document.createElement('tr');
                 tr.className = "error-row";
-                tr.innerHTML = `
-                    <td style="font-weight:bold;">${lines[i]}</td>
-                    <td colspan="6" style="color: red; text-align: left;">⚠️ Bỏ qua do lỗi: ${err.message}</td>
-                `;
+
+                const tdInput = document.createElement('td');
+                tdInput.style.fontWeight = 'bold';
+                tdInput.textContent = lines[i];
+
+                const tdErr = document.createElement('td');
+                tdErr.colSpan = 6;
+                tdErr.style.color = 'red';
+                tdErr.style.textAlign = 'left';
+                tdErr.textContent = '⚠️ Bỏ qua do lỗi: ' + err.message;
+
+                tr.appendChild(tdInput);
+                tr.appendChild(tdErr);
                 tableBody.appendChild(tr);
                 failCount++;
             }
