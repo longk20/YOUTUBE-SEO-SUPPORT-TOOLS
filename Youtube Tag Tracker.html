@@ -101,7 +101,7 @@
             labelChannel: "3. Nhập Tên Kênh / @Handle:",
             labelVideo: "3. Dán Link Video YouTube:",
             phKeyword: "Ví dụ: Christmas Songs",
-            phChannel: "Ví dụ: @hoanglongmck",
+            phChannel: "Ví dụ: @hoanglongmck (hoặc dán nguyên link kênh)",
             phVideo: "Ví dụ: https://www.youtube.com/watch?v=...",
             btnSearch: "Bắt đầu Quét",
             copyTitle: "📋 BỘ TAG ĐÃ SẴN SÀNG",
@@ -135,7 +135,7 @@
             labelChannel: "3. Enter Channel Name / @Handle:",
             labelVideo: "3. Paste YouTube Video Link:",
             phKeyword: "Example: Christmas Songs",
-            phChannel: "Example: @hoanglongmck",
+            phChannel: "Example: @hoanglongmck (or paste full channel link)",
             phVideo: "Example: https://www.youtube.com/watch?v=...",
             btnSearch: "Start Scanning",
             copyTitle: "📋 TAGS ARE READY",
@@ -205,6 +205,19 @@
         }
     }
 
+    // Tự động nhận diện @handle hoặc UC-id trong mọi kiểu input
+    // (dán @handle trần, dán nguyên link, hay link kèm ?si=... đều xử lý được)
+    function extractChannelInfo(input) {
+        input = input.trim();
+        let handleMatch = input.match(/@([a-zA-Z0-9_.-]+)/);
+        if (handleMatch) return { type: 'handle', value: handleMatch[1] };
+
+        let idMatch = input.match(/(?:channel\/|^)(UC[\w-]{22})/);
+        if (idMatch) return { type: 'id', value: idMatch[1] };
+
+        return { type: 'search', value: input }; // Dự phòng tìm kiếm bằng chữ
+    }
+
     function extractVideoID(url) {
         let regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
         let match = url.match(regExp);
@@ -251,12 +264,54 @@
             } 
             else if (searchType === 'channel') {
                 statusDiv.innerText = t.statFindChan;
-                const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=id&type=channel&q=${encodeURIComponent(keyword)}&maxResults=1&key=${apiKey}`);
-                const channelData = await channelRes.json();
-                if (channelData.error) throw new Error(channelData.error.message);
-                if (channelData.items.length === 0) throw new Error(t.errNoChan);
-                
-                const channelId = channelData.items[0].id.channelId;
+
+                let channelId = null;
+
+                // NHẬN DIỆN INPUT BẰNG REGEX: tự động lọc ra @handle hoặc UC-id
+                // dù người dùng dán @handle trần, link đầy đủ, hay link có ?si=... phía sau.
+                // Regex chỉ khớp ký tự hợp lệ [a-zA-Z0-9_.-] nên tự bỏ qua phần thừa (?, /, =...)
+                const info = extractChannelInfo(keyword);
+
+                // BƯỚC 1: Nếu là @handle -> dùng channels.list?forHandle (chính xác nhất, rẻ quota)
+                if (info.type === 'handle') {
+                    const handleRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=id&forHandle=${encodeURIComponent('@' + info.value)}&key=${apiKey}`);
+                    const handleData = await handleRes.json();
+                    if (handleData.error) throw new Error(handleData.error.message);
+                    if (handleData.items && handleData.items.length > 0) {
+                        channelId = handleData.items[0].id;
+                    }
+                }
+                // BƯỚC 1b: Nếu là UC-id -> dùng channels.list?id trực tiếp (chính xác 100%)
+                else if (info.type === 'id') {
+                    const idRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=id&id=${info.value}&key=${apiKey}`);
+                    const idData = await idRes.json();
+                    if (idData.error) throw new Error(idData.error.message);
+                    if (idData.items && idData.items.length > 0) {
+                        channelId = idData.items[0].id;
+                    }
+                }
+
+                // BƯỚC 2: Nếu chưa có -> thử forUsername (tên kênh kiểu YouTube cũ)
+                if (!channelId && info.type === 'handle') {
+                    const userRes = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=id&forUsername=${encodeURIComponent(info.value)}&key=${apiKey}`);
+                    const userData = await userRes.json();
+                    if (!userData.error && userData.items && userData.items.length > 0) {
+                        channelId = userData.items[0].id;
+                    }
+                }
+
+                // BƯỚC 3: Fallback cuối cùng -> search text-based (kém chính xác nhất, tốn quota)
+                if (!channelId) {
+                    const channelRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(info.value)}&maxResults=1&key=${apiKey}`);
+                    const channelData = await channelRes.json();
+                    if (channelData.error) throw new Error(channelData.error.message);
+                    if (channelData.items && channelData.items.length > 0) {
+                        channelId = channelData.items[0].id.channelId || channelData.items[0].snippet.channelId;
+                    }
+                }
+
+                if (!channelId) throw new Error(t.errNoChan);
+
                 statusDiv.innerText = t.statGetVid;
                 const channelVideosRes = await fetch(`https://www.googleapis.com/youtube/v3/search?part=id&type=video&channelId=${channelId}&order=viewCount&maxResults=50&key=${apiKey}`);
                 const channelVideosData = await channelVideosRes.json();
@@ -327,7 +382,7 @@
                 sortedTags.forEach((item, index) => {
                     const count = item[1];
                     const percentage = ((count / videosWithTags) * 100).toFixed(1);
-                    // FIX: AN TOÀN - dùng textContent thay vì innerHTML để tránh XSS
+                    // AN TOÀN: dùng textContent thay vì innerHTML để tránh XSS
                     // (tag video do người khác tự đặt, không đáng tin cậy)
                     const tr = document.createElement('tr');
 
