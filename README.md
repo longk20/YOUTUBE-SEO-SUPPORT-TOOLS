@@ -24,13 +24,10 @@ A collection of lightweight web-based tools for extracting and analyzing YouTube
 - Extract tags from YouTube videos.
 - Discover the most common tags from a channel or keyword search.
 - Generate SEO-friendly keyword lists.
+- Supports 3 search modes: Keyword, Channel, or Single Video.
 - Supports English and Vietnamese.
 
-### 4. [YouTube Keyword Research Tool](./Keyword%20Research.html)
-- Research keywords for SEO and content planning.
-- Supports English and Vietnamese.
-
-### 5. [YouTube API Setup Guide](./API%20YOUTUBE.txt)
+### 4. [YouTube API Setup Guide](./API%20YOUTUBE.txt)
 - Step-by-step instructions for creating a YouTube Data API Key.
 - English and Vietnamese documentation.
 - Quick start guide for beginners.
